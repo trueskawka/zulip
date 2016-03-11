@@ -21,7 +21,6 @@ casper.then(function () {
 
 casper.waitForSelector('.sub_unsub_button.subscribed-button', function () {
     casper.test.assertTextExists('Subscribed', 'Initial subscriptions loaded');
-    casper.fill('form#add_new_subscription', {stream_name: 'Waseemio'});
     casper.click('form#add_new_subscription input.btn');
 });
 casper.waitForText('Waseemio', function () {
@@ -59,10 +58,6 @@ casper.then(function () {
                              "King Hamlet is visible again"
     );
 });
-casper.then(function () {
-    casper.test.assertTextExists('Create stream Waseemio', 'Create a new stream');
-    casper.click('form#stream_creation_form button.btn.btn-primary');
-});
 casper.waitFor(function () {
     return casper.evaluate(function () {
         return $('.subscription_name').is(':contains("Waseemio")');
@@ -71,13 +66,21 @@ casper.waitFor(function () {
 
 casper.then(function () {
     casper.test.assertSelectorHasText('.subscription_name', 'Waseemio', 'Subscribing to a stream');
-    casper.fill('form#add_new_subscription', {stream_name: 'WASeemio'});
     casper.click('form#add_new_subscription input.btn');
+});
+casper.waitForText('Create stream', function () {
+    casper.test.assertTextExists('Create stream', 'Modal for specifying new stream users');
+    casper.fill('form#stream_creation_form', {stream_name: 'WASeemio'});
+    casper.click('form#stream_creation_form button.btn.btn-primary');
 });
 casper.waitForText('Already subscribed', function () {
     casper.test.assertTextExists('Already subscribed', "Can't subscribe twice to a stream");
-    casper.fill('form#add_new_subscription', {stream_name: '  '});
     casper.click('form#add_new_subscription input.btn');
+});
+casper.waitForText('Create stream', function () {
+    casper.test.assertTextExists('Create stream', 'Modal for specifying new stream users');
+    casper.fill('form#stream_creation_form', {stream_name: '  '});
+    casper.click('form#stream_creation_form button.btn.btn-primary');
 });
 casper.waitForText('Error adding subscription', function () {
     casper.test.assertTextExists('Error adding subscription', "Can't subscribe to an empty stream name");
