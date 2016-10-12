@@ -707,13 +707,13 @@ function ajaxSubscribeForCreation(stream, principals, invite_only, announce) {
             $("#create_stream_name").val("");
             exports.filter_table("");
             $("#subscriptions-status").hide();
-            $('#stream-creation').modal("hide");
+            hide_new_stream_modal();
             // The rest of the work is done via the subscribe event we will get
         },
         error: function (xhr) {
             ui.report_error(i18n.t("Error creating stream"), xhr,
                             $("#subscriptions-status"), 'subscriptions-status');
-            $('#stream-creation').modal("hide");
+            hide_new_stream_modal();
         }
     });
 }
@@ -738,6 +738,7 @@ function update_announce_stream_state() {
 }
 
 function show_new_stream_modal() {
+    $("#stream_name_error").hide();
     $('#people_to_add').html(templates.render('new_stream_users', {
         users: people.get_rest_of_realm()
     }));
@@ -807,22 +808,19 @@ $(function () {
 
     $("#subscriptions_table").on("submit", "#add_new_subscription", function (e) {
         e.preventDefault();
-
-        if (!should_list_all_streams() && $("#create_stream_name").val()) {
-            ajaxSubscribe($("#create_stream_name").val());
+        if (!should_list_all_streams()) {
+            ajaxSubscribe($("#search_stream_name").val());
             return;
+        }
+        var stream = $.trim($("#search_stream_name").val());
+        var stream_status = compose.check_stream_existence(stream);
+        if (stream_status === "does-not-exist") {
+            $("#stream_name").text(stream);
+            show_new_stream_modal();
+        } else if (!stream) {
+            show_new_stream_modal();
         } else {
-            if ($("#search_stream_name").val().length > 0 && $(".subscription_row:not(.notdisplayed)").length > 0) {
-                var sub_id = $(".subscription_row:not(.notdisplayed):first").data("subscriptionId");
-                var settings = $("#subscription_settings_" + sub_id);
-                if (settings.hasClass('in')) {
-                    settings.collapse('hide');
-                } else {
-                    settings.collapse('show');
-                }
-            } else {
-                show_new_stream_modal();
-            }
+            ajaxSubscribe(stream);
         }
     });
 
@@ -899,19 +897,28 @@ $(function () {
     $("#stream_creation_form").on("submit", function (e) {
         e.preventDefault();
         var stream = $.trim($("#create_stream_name").val());
-        var principals = _.map(
-            $("#stream_creation_form input:checkbox[name=user]:checked"),
-            function (elem) {
-                return $(elem).val();
-            }
-        );
-        // You are always subscribed to streams you create.
-        principals.push(page_params.email);
-        ajaxSubscribeForCreation(stream,
-            principals,
-            $('#stream_creation_form input[name=privacy]:checked').val() === "invite-only",
-            $('#announce-new-stream input').prop('checked')
-            );
+        // do it on unfocus the name field
+        var stream_status = compose.check_stream_existence(stream);
+        if (stream_status == "does-not-exist") {
+          $("#stream_name_error").hide();
+          var principals = _.map(
+              $("#stream_creation_form input:checkbox[name=user]:checked"),
+              function (elem) {
+                  return $(elem).val();
+              }
+          );
+          // You are always subscribed to streams you create.
+          principals.push(page_params.email);
+          ajaxSubscribeForCreation(stream,
+              principals,
+              $('#stream_creation_form input[name=privacy]:checked').val() === "invite-only",
+              $('#announce-new-stream input').prop('checked')
+              );
+          hide_new_stream_modal();
+        } else {
+          $("#stream_name_error").text(i18n.t("A stream with this name already exists"));
+          $("#stream_name_error").show();
+        }
     });
 
     $("body").on("mouseover", ".subscribed-button", function (e) {
