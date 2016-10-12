@@ -2946,9 +2946,9 @@ form#add_new_subscription {
 }
 
 #stream_name_error {
-  display: none;
-  margin-left: 2px;
-  color: #FF0000;
+    display: none;
+    margin-left: 2px;
+    color: #FF0000;
 }
 
 .sub_settings_title {

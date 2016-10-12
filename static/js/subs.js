@@ -694,6 +694,25 @@ function ajaxUnsubscribe(stream) {
     });
 }
 
+function show_new_stream_modal() {
+    $('#people_to_add').html(templates.render('new_stream_users', {
+        users: people.get_rest_of_realm()
+    }));
+
+    // Make the options default to the same each time:
+    // public, "announce stream" on.
+    $('#make-invite-only input:radio[value=public]').prop('checked', true);
+    $('#announce-new-stream input').prop('disabled', false);
+    $('#announce-new-stream input').prop('checked', true);
+
+    $('#stream-creation').modal("show");
+    $('#create_stream_name').focus();
+}
+
+function hide_new_stream_modal() {
+    $('#stream-creation').modal("hide");
+}
+
 function ajaxSubscribeForCreation(stream, principals, invite_only, announce) {
     // Subscribe yourself and possible other people to a new stream.
     return channel.post({
@@ -735,25 +754,6 @@ function update_announce_stream_state() {
     }
 
     announce_stream_checkbox.prop('disabled', disable_it);
-}
-
-function show_new_stream_modal() {
-    $("#stream_name_error").hide();
-    $('#people_to_add').html(templates.render('new_stream_users', {
-        users: people.get_rest_of_realm()
-    }));
-
-    // Make the options default to the same each time:
-    // public, "announce stream" on.
-    $('#make-invite-only input:radio[value=public]').prop('checked', true);
-    $('#announce-new-stream input').prop('disabled', false);
-    $('#announce-new-stream input').prop('checked', true);
-
-    $('#stream-creation').modal("show");
-}
-
-function hide_new_stream_modal() {
-    $('#stream-creation').modal("hide");
 }
 
 exports.invite_user_to_stream = function (user_email, stream_name, success, failure) {
@@ -814,10 +814,8 @@ $(function () {
         }
         var stream = $.trim($("#search_stream_name").val());
         var stream_status = compose.check_stream_existence(stream);
-        if (stream_status === "does-not-exist") {
-            $("#stream_name").text(stream);
-            show_new_stream_modal();
-        } else if (!stream) {
+        if (stream_status === "does-not-exist" || !stream) {
+            $('#create_stream_name').val(stream);
             show_new_stream_modal();
         } else {
             ajaxSubscribe(stream);
@@ -894,13 +892,21 @@ $(function () {
         e.stopPropagation();
     });
 
+    $("#create_stream_name").on("focusout", function () {
+      var stream = $.trim($("#create_stream_name").val());
+      var stream_status = compose.check_stream_existence(stream);
+      if (stream_status !== "does-not-exist") {
+        $("#stream_name_error").text(i18n.t("A stream with this name already exists"));
+        $("#stream_name_error").show();
+      } else {
+        $("#stream_name_error").hide();
+      }
+    });
+
     $("#stream_creation_form").on("submit", function (e) {
         e.preventDefault();
         var stream = $.trim($("#create_stream_name").val());
-        // do it on unfocus the name field
-        var stream_status = compose.check_stream_existence(stream);
-        if (stream_status == "does-not-exist") {
-          $("#stream_name_error").hide();
+        if (!$("#stream_name_error").is(":visible")) {
           var principals = _.map(
               $("#stream_creation_form input:checkbox[name=user]:checked"),
               function (elem) {
@@ -915,9 +921,7 @@ $(function () {
               $('#announce-new-stream input').prop('checked')
               );
           hide_new_stream_modal();
-        } else {
-          $("#stream_name_error").text(i18n.t("A stream with this name already exists"));
-          $("#stream_name_error").show();
+          $("#search_stream_name").val("");
         }
     });
 
