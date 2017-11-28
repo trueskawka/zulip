@@ -30,12 +30,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   host_ip_addr = "127.0.0.1"
 
   config.vm.synced_folder ".", "/vagrant", disabled: true
-  if (/darwin/ =~ RUBY_PLATFORM) != nil
-    config.vm.synced_folder ".", "/srv/zulip", type: "nfs"
-    config.vm.network "private_network", type: "dhcp"
-  else
-    config.vm.synced_folder ".", "/srv/zulip"
-  end
+  config.vm.synced_folder ".", "/srv/zulip"
 
   vagrant_config_file = ENV['HOME'] + "/.zulip-vagrant-config"
   if File.file?(vagrant_config_file)
@@ -89,7 +84,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.provider "virtualbox" do |vb, override|
-    override.vm.box = "ubuntu/trusty64"
+    override.vm.box = "ubuntu/xenial64"
     # It's possible we can get away with just 1.5GB; more testing needed
     vb.memory = 2048
     vb.cpus = 2
